@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: ./back
+      dockerfile: Dockerfile
+    env_file:
+      - ./back/app/.env
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    volumes:
+      - ./back/app:/app/app
+    entrypoint: ["sh", "/app/app/migrate_db.sh"]
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+
+  db:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+
+  frontend:
+    build:
+      context: ./front/monitoring-battery
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:8000/api/v1
+    ports:
+      - "3000:80"
+    depends_on:
+      - app
+
+volumes:
+  pgdata:
